@@ -1,0 +1,66 @@
+# lost-found–platform
+-- Users table (members who post items)
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Categories for items (e.g., wallet, phone, pet)
+CREATE TABLE categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    description TEXT
+);
+
+-- Main lost/found items table
+CREATE TABLE items (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    category_id INT,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    location VARCHAR(200),
+    post_type ENUM('lost', 'found') NOT NULL,
+    date_reported DATE NOT NULL,
+    status ENUM('open', 'claimed', 'closed') DEFAULT 'open',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(category_id)
+);
+
+#image handling
+-- Images table (one-to-many with items)
+CREATE TABLE item_images (
+    image_id INT AUTO_INCREMENT PRIMARY KEY,
+    item_id INT NOT NULL,
+    image_path VARCHAR(500) NOT NULL,  -- e.g., 'uploads/images/item123_photo1.jpg'
+    description VARCHAR(200),
+    is_primary BOOLEAN DEFAULT FALSE,  -- Mark one as main image
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE
+);
+
+#insert lost item with image
+-- Index for fast image lookups
+CREATE INDEX idx_item_images ON item_images(item_id);
+
+-- Insert item
+INSERT INTO items (user_id, category_id, title, description, location, post_type, date_reported)
+VALUES (1, 1, 'Lost black wallet', 'Contains ID cards', 'City Center Mall', 'lost', '2026-02-16');
+
+-- Get the new item_id (use LAST_INSERT_ID())
+SET @item_id = LAST_INSERT_ID();
+
+-- Insert image (upload file first, get path)
+INSERT INTO item_images (item_id, image_path, description)
+VALUES (@item_id, 'uploads/images/wallet_photo.jpg', 'Front view');
+
+#query lost item with image
+SELECT i.title, i.description, i.location, ii.image_path
+FROM items i
+LEFT JOIN item_images ii ON i.item_id = ii.item_id
+WHERE i.post_type = 'lost' AND i.status = 'open'
+ORDER BY i.created_at DESC;
