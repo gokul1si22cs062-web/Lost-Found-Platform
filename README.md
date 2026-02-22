@@ -13,7 +13,7 @@ A comprehensive platform for users to post and search for lost and found items.
 
 ## Tech Stack
 
-### Frontend (Member 2 - Frontend Logic & Integration)
+### Frontend ( Frontend Logic & Integration)
 - React 18
 - React Router for navigation
 - Axios for API integration
